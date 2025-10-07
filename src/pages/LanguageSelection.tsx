@@ -28,20 +28,22 @@ const LanguageSelection = () => {
 
   const toggleLanguage = (code: string) => {
     if (anyLanguage) {
-      setAnyLanguage(false);
-    }
-    if (selectedLanguages.includes(code)) {
-      setSelectedLanguages(selectedLanguages.filter((l) => l !== code));
-    } else if (selectedLanguages.length < 3) {
-      setSelectedLanguages([...selectedLanguages, code]);
+      // In translator mode, only allow 1 language
+      setSelectedLanguages([code]);
+    } else {
+      if (selectedLanguages.includes(code)) {
+        setSelectedLanguages(selectedLanguages.filter((l) => l !== code));
+      } else if (selectedLanguages.length < 3) {
+        setSelectedLanguages([...selectedLanguages, code]);
+      }
     }
   };
 
   const handleTranslatorToggle = () => {
-    setAnyLanguage(!anyLanguage);
-    if (!anyLanguage) {
-      setSelectedLanguages([]);
-    }
+    const newAnyLanguage = !anyLanguage;
+    setAnyLanguage(newAnyLanguage);
+    // Clear selections when toggling
+    setSelectedLanguages([]);
   };
 
   const handleContinue = () => {
@@ -73,14 +75,24 @@ const LanguageSelection = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Select Languages
+              {anyLanguage ? "Select Translation Language" : "Select Languages"}
             </h1>
             <p className="text-lg text-muted-foreground mb-2">
-              {chatType === "text" ? "Choose up to 3 preferred languages or use translator" : "Choose up to 3 preferred languages"}
+              {anyLanguage 
+                ? "Choose 1 language to translate conversations into"
+                : chatType === "text" 
+                  ? "Choose up to 3 preferred languages or use translator" 
+                  : "Choose up to 3 preferred languages"
+              }
             </p>
             {!anyLanguage && (
               <p className="text-sm text-muted-foreground">
                 {selectedLanguages.length}/3 selected
+              </p>
+            )}
+            {anyLanguage && selectedLanguages.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {selectedLanguages.length}/1 selected
               </p>
             )}
           </div>
@@ -91,7 +103,11 @@ const LanguageSelection = () => {
               <button
                 key={language.code}
                 onClick={() => toggleLanguage(language.code)}
-                disabled={anyLanguage || (!selectedLanguages.includes(language.code) && selectedLanguages.length >= 3)}
+                disabled={
+                  anyLanguage 
+                    ? false 
+                    : (!selectedLanguages.includes(language.code) && selectedLanguages.length >= 3)
+                }
                 className={`p-4 rounded-xl border-2 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed relative ${
                   selectedLanguages.includes(language.code)
                     ? "border-primary bg-card shadow-lg shadow-primary/20"

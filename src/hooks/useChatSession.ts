@@ -8,7 +8,11 @@ interface Message {
   timestamp: Date;
 }
 
-export const useChatSession = (sessionId: string | null, userId: string) => {
+export const useChatSession = (
+  sessionId: string | null, 
+  userId: string,
+  onSessionEnded?: () => void
+) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [partnerConnected, setPartnerConnected] = useState(false);
 
@@ -41,7 +45,7 @@ export const useChatSession = (sessionId: string | null, userId: string) => {
     loadMessages();
 
     // Listen for new messages
-    const channel = supabase
+    const messagesChannel = supabase
       .channel(`session-${sessionId}`)
       .on(
         "postgres_changes",
@@ -66,13 +70,33 @@ export const useChatSession = (sessionId: string | null, userId: string) => {
       )
       .subscribe();
 
+    // Listen for session end
+    const sessionChannel = supabase
+      .channel(`session-end-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_sessions",
+          filter: `id=eq.${sessionId}`,
+        },
+        (payload) => {
+          if (payload.new.ended_at && onSessionEnded) {
+            onSessionEnded();
+          }
+        }
+      )
+      .subscribe();
+
     // Check if partner is connected
     setPartnerConnected(true);
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(sessionChannel);
     };
-  }, [sessionId]);
+  }, [sessionId, onSessionEnded]);
 
   const sendMessage = async (content: string) => {
     if (!sessionId || !content.trim()) return;
