@@ -8,81 +8,20 @@ export const useMatching = () => {
     if (!userId) throw new Error("User not authenticated");
     
     try {
-      // First, try to find a match
-      const { data: existingUsers, error: searchError } = await supabase
-        .from("match_queue")
-        .select("*")
-        .eq("topic", topic)
-        .eq("chat_type", chatType)
-        .neq("user_id", userId)
-        .limit(10);
+      // Use secure server-side matching function
+      const { data, error } = await supabase.rpc('find_match', {
+        _topic: topic,
+        _languages: languages,
+        _chat_type: chatType,
+      });
 
-      if (searchError) throw searchError;
+      if (error) throw error;
 
-      // Find a user with compatible languages
-      let matchedUser = null;
-      if (existingUsers && existingUsers.length > 0) {
-        for (const user of existingUsers) {
-          const hasAnyLanguage = languages.includes("any");
-          const userHasAny = user.languages?.includes("any");
-          const hasCommonLanguage = languages.some((lang) =>
-            user.languages?.includes(lang)
-          );
-
-          // Treat "translator mode" as compatible with anyone
-          const isTranslatorModeCurrent = Array.isArray(languages) && languages.length === 1 && languages[0] !== "en";
-          const isTranslatorModeUser = Array.isArray(user.languages) && user.languages.length === 1 && user.languages[0] !== "en";
-
-          if (
-            hasAnyLanguage ||
-            userHasAny ||
-            hasCommonLanguage ||
-            isTranslatorModeCurrent ||
-            isTranslatorModeUser
-          ) {
-            matchedUser = user;
-            break;
-          }
-        }
-      }
-
-      if (matchedUser) {
-        // Create session with matched user
-        const { data: session, error: sessionError } = await supabase
-          .from("chat_sessions")
-          .insert({
-            user1_id: userId,
-            user2_id: matchedUser.user_id,
-            topic,
-            chat_type: chatType,
-          })
-          .select()
-          .single();
-
-        if (sessionError) throw sessionError;
-
-        // Remove both users from queue
-        await supabase
-          .from("match_queue")
-          .delete()
-          .in("user_id", [userId, matchedUser.user_id]);
-
-        return { matched: true, sessionId: session.id };
-      } else {
-        // Add to queue and wait for match
-        const { error: insertError } = await supabase
-          .from("match_queue")
-          .insert({
-            user_id: userId,
-            topic,
-            languages,
-            chat_type: chatType,
-          });
-
-        if (insertError) throw insertError;
-
-        return { matched: false, sessionId: null };
-      }
+      const result = data as { matched: boolean; session_id: string | null };
+      return {
+        matched: result.matched,
+        sessionId: result.session_id,
+      };
     } catch (error) {
       console.error("Error joining queue:", error);
       throw error;

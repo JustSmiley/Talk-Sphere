@@ -4,11 +4,13 @@ import { Loader2, Users } from "lucide-react";
 import { useMatching } from "@/hooks/useMatching";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Matching = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { loading: authLoading } = useAuth();
   const chatType = searchParams.get("type") || "text";
   const topic = searchParams.get("topic") || "General";
   const languagesParam = searchParams.get("languages") || "en";
@@ -27,6 +29,9 @@ const Matching = () => {
   };
 
   useEffect(() => {
+    // Wait for auth to initialize before starting matching
+    if (authLoading) return;
+
     let cleanupListener: (() => void) | undefined;
 
     const startMatching = async () => {
@@ -60,13 +65,20 @@ const Matching = () => {
       leaveQueue();
       if (cleanupListener) cleanupListener();
     };
-  }, [navigate, chatType, topic, languages]);
+  }, [authLoading, navigate, chatType, topic, languages]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center">
       <div className="text-center space-y-8 px-4">
-        {/* Animated Icon */}
-        <div className="relative">
+        {authLoading ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            <span className="text-muted-foreground">Initializing...</span>
+          </div>
+        ) : (
+          <>
+            {/* Animated Icon */}
+            <div className="relative">
           <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto animate-pulse shadow-2xl shadow-primary/40">
             <Users className="w-16 h-16 text-primary-foreground" />
           </div>
@@ -107,12 +119,14 @@ const Matching = () => {
           </div>
         </div>
 
-        {/* Quit Button */}
-        <div className="flex justify-center">
-          <Button variant="ghost" onClick={handleQuit}>
-            Quit and return home
-          </Button>
-        </div>
+            {/* Quit Button */}
+            <div className="flex justify-center">
+              <Button variant="ghost" onClick={handleQuit}>
+                Quit and return home
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

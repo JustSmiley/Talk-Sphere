@@ -103,11 +103,33 @@ export type Database = {
           },
         ]
       }
+      translation_rate_limits: {
+        Row: {
+          request_count: number | null
+          user_id: string
+          window_start: string | null
+        }
+        Insert: {
+          request_count?: number | null
+          user_id: string
+          window_start?: string | null
+        }
+        Update: {
+          request_count?: number | null
+          user_id?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      find_match: {
+        Args: { _chat_type: string; _languages: string[]; _topic: string }
+        Returns: Json
+      }
       is_session_participant: {
         Args: { _session_id: string }
         Returns: boolean

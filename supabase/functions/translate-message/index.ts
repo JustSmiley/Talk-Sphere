@@ -12,6 +12,30 @@ serve(async (req) => {
 
   try {
     const { text, targetLanguage } = await req.json();
+    
+    // Input validation
+    if (!text || typeof text !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Invalid text parameter" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (text.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "Text too long (max 5000 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const validLanguages = ['en', 'es', 'fr', 'de', 'ja', 'ko', 'zh', 'ar', 'ru', 'pt', 'hi'];
+    if (!validLanguages.includes(targetLanguage?.toLowerCase())) {
+      return new Response(
+        JSON.stringify({ error: "Invalid target language" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {

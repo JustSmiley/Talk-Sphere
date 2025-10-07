@@ -1,4 +1,4 @@
 project_id = "btflfloqjupthedylzbr"
 
 [functions.translate-message]
-verify_jwt = false
+verify_jwt = true
