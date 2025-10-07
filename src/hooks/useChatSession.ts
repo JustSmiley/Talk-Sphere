@@ -1,0 +1,107 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Message {
+  id: string;
+  sender_id: string;
+  content: string;
+  timestamp: Date;
+}
+
+export const useChatSession = (sessionId: string | null, userId: string) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [partnerConnected, setPartnerConnected] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    // Load existing messages
+    const loadMessages = async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading messages:", error);
+        return;
+      }
+
+      setMessages(
+        data.map((msg) => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+        }))
+      );
+    };
+
+    loadMessages();
+
+    // Listen for new messages
+    const channel = supabase
+      .channel(`session-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: newMsg.id,
+              sender_id: newMsg.sender_id,
+              content: newMsg.content,
+              timestamp: new Date(newMsg.created_at),
+            },
+          ]);
+        }
+      )
+      .subscribe();
+
+    // Check if partner is connected
+    setPartnerConnected(true);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+
+  const sendMessage = async (content: string) => {
+    if (!sessionId || !content.trim()) return;
+
+    try {
+      const { error } = await supabase.from("messages").insert({
+        session_id: sessionId,
+        sender_id: userId,
+        content: content.trim(),
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  const endSession = async () => {
+    if (!sessionId) return;
+
+    try {
+      await supabase
+        .from("chat_sessions")
+        .update({ ended_at: new Date().toISOString() })
+        .eq("id", sessionId);
+    } catch (error) {
+      console.error("Error ending session:", error);
+    }
+  };
+
+  return { messages, sendMessage, endSession, partnerConnected };
+};

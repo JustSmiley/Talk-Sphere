@@ -2,29 +2,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, SkipForward } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useChatSession } from "@/hooks/useChatSession";
+import { useMatching } from "@/hooks/useMatching";
 
 const Chat = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const chatType = searchParams.get("type") || "text";
+  const sessionId = searchParams.get("session");
+  const { userId } = useMatching();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "other", text: "Hey! Nice to meet you!", timestamp: new Date() },
-    { id: 2, sender: "me", text: "Hi! How are you doing?", timestamp: new Date() },
-  ]);
   const [isMuted, setIsMuted] = useState(false);
+  
+  const { messages, sendMessage, endSession, partnerConnected } = useChatSession(sessionId, userId);
 
-  const handleNextMatch = () => {
-    navigate(`/matching?type=${chatType}`);
+  const handleNextMatch = async () => {
+    await endSession();
+    const topic = searchParams.get("topic") || "General";
+    const languages = searchParams.get("languages") || "en";
+    navigate(`/matching?type=${chatType}&topic=${topic}&languages=${languages}`);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (message.trim()) {
-      setMessages([
-        ...messages,
-        { id: messages.length + 1, sender: "me", text: message, timestamp: new Date() },
-      ]);
+      await sendMessage(message);
       setMessage("");
     }
   };
@@ -66,7 +68,7 @@ const Chat = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         {chatType === "text" ? (
-          <TextChatView messages={messages} />
+          <TextChatView messages={messages} userId={userId} />
         ) : (
           <VideoChatView isMuted={isMuted} />
         )}
@@ -115,23 +117,28 @@ const Chat = () => {
   );
 };
 
-const TextChatView = ({ messages }: { messages: any[] }) => {
+const TextChatView = ({ messages, userId }: { messages: any[]; userId: string }) => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="max-w-4xl mx-auto space-y-4">
+        {messages.length === 0 && (
+          <div className="text-center text-muted-foreground mt-8">
+            Start the conversation by sending a message!
+          </div>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
+            className={`flex ${msg.sender_id === userId ? "justify-end" : "justify-start"}`}
           >
             <div
               className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                msg.sender === "me"
+                msg.sender_id === userId
                   ? "bg-gradient-to-br from-primary to-accent text-primary-foreground"
                   : "bg-card border border-border text-foreground"
               }`}
             >
-              <p className="text-sm">{msg.text}</p>
+              <p className="text-sm">{msg.content}</p>
             </div>
           </div>
         ))}

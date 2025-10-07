@@ -14,7 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_sessions: {
+        Row: {
+          chat_type: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          topic: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          chat_type: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          topic: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          chat_type?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          topic?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
+      match_queue: {
+        Row: {
+          chat_type: string
+          created_at: string
+          id: string
+          languages: string[]
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          chat_type: string
+          created_at?: string
+          id?: string
+          languages: string[]
+          topic: string
+          user_id: string
+        }
+        Update: {
+          chat_type?: string
+          created_at?: string
+          id?: string
+          languages?: string[]
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

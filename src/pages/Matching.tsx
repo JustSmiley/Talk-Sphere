@@ -1,20 +1,55 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, Users } from "lucide-react";
+import { useMatching } from "@/hooks/useMatching";
+import { useToast } from "@/hooks/use-toast";
 
 const Matching = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const chatType = searchParams.get("type") || "text";
+  const topic = searchParams.get("topic") || "General";
+  const languagesParam = searchParams.get("languages") || "en";
+  const languages = languagesParam.split(",");
+  
+  const { joinQueue, leaveQueue, listenForMatch } = useMatching();
+  const [isSearching, setIsSearching] = useState(true);
 
   useEffect(() => {
-    // Simulate matching process
-    const timer = setTimeout(() => {
-      navigate(`/chat?type=${chatType}`);
-    }, 3000);
+    let cleanupListener: (() => void) | undefined;
 
-    return () => clearTimeout(timer);
-  }, [navigate, chatType]);
+    const startMatching = async () => {
+      try {
+        const result = await joinQueue(topic, languages, chatType);
+        
+        if (result.matched) {
+          // Immediate match found
+          navigate(`/chat?type=${chatType}&session=${result.sessionId}`);
+        } else {
+          // Waiting for match
+          cleanupListener = listenForMatch((sessionId) => {
+            setIsSearching(false);
+            navigate(`/chat?type=${chatType}&session=${sessionId}`);
+          });
+        }
+      } catch (error) {
+        console.error("Matching error:", error);
+        toast({
+          title: "Matching Error",
+          description: "Failed to join matching queue. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    startMatching();
+
+    return () => {
+      leaveQueue();
+      if (cleanupListener) cleanupListener();
+    };
+  }, [navigate, chatType, topic, languages]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center">

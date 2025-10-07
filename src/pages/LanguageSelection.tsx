@@ -46,7 +46,8 @@ const LanguageSelection = () => {
 
   const handleContinue = () => {
     if (selectedLanguages.length > 0 || anyLanguage) {
-      navigate(`/verification?type=${chatType}&topic=${topic}&languages=${selectedLanguages.join(",")}&any=${anyLanguage}`);
+      const langs = anyLanguage ? "any" : selectedLanguages.join(",");
+      navigate(`/verification?type=${chatType}&topic=${topic}&languages=${langs}`);
     }
   };
 
