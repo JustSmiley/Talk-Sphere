@@ -4,7 +4,7 @@ import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, SkipForward, Hom
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useChatSession } from "@/hooks/useChatSession";
-import { useMatching } from "@/hooks/useMatching";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,9 +12,9 @@ const Chat = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userId } = useAuth();
   const chatType = searchParams.get("type") || "text";
   const sessionId = searchParams.get("session");
-  const { userId } = useMatching();
   const [message, setMessage] = useState("");
   const [isMuted, setIsMuted] = useState(false);
   const languages = searchParams.get("languages") || "en";
@@ -34,8 +34,7 @@ const Chat = () => {
   };
   
   const { messages, sendMessage, endSession, partnerConnected } = useChatSession(
-    sessionId, 
-    userId,
+    sessionId,
     handleSessionEnded
   );
 

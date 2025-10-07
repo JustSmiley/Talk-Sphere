@@ -1,17 +1,12 @@
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useMatching = () => {
-  const [userId] = useState(() => {
-    const stored = localStorage.getItem("talksphere_user_id");
-    if (stored) return stored;
-    const newId = uuidv4();
-    localStorage.setItem("talksphere_user_id", newId);
-    return newId;
-  });
+  const { userId } = useAuth();
 
   const joinQueue = async (topic: string, languages: string[], chatType: string) => {
+    if (!userId) throw new Error("User not authenticated");
+    
     try {
       // First, try to find a match
       const { data: existingUsers, error: searchError } = await supabase

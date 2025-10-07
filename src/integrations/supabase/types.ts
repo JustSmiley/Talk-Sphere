@@ -109,7 +109,7 @@ export type Database = {
     }
     Functions: {
       is_session_participant: {
-        Args: { _session_id: string; _user_id: string }
+        Args: { _session_id: string }
         Returns: boolean
       }
     }

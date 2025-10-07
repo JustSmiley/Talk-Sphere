@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: string;
@@ -9,10 +10,10 @@ interface Message {
 }
 
 export const useChatSession = (
-  sessionId: string | null, 
-  userId: string,
+  sessionId: string | null,
   onSessionEnded?: () => void
 ) => {
+  const { userId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [partnerConnected, setPartnerConnected] = useState(false);
   const channelRef = useRef<any>(null);
@@ -109,7 +110,7 @@ export const useChatSession = (
   }, [sessionId, onSessionEnded]);
 
   const sendMessage = async (content: string) => {
-    if (!sessionId || !content.trim()) return;
+    if (!sessionId || !content.trim() || !userId) return;
 
     try {
       const { error } = await supabase.from("messages").insert({
