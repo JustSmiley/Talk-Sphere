@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Sparkles, Trophy, Heart, Palette, Code, Music, Globe } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Sparkles, Trophy, Heart, Palette, Code, Music, Globe, Search } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 
@@ -17,6 +18,23 @@ const TopicSelection = () => {
   const [searchParams] = useSearchParams();
   const chatType = searchParams.get("type") || "text";
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [customTopic, setCustomTopic] = useState("");
+
+  const filteredTopics = topics.filter(topic => 
+    topic.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleTopicSelect = (topicId: string) => {
+    setSelectedTopic(topicId);
+    setCustomTopic("");
+  };
+
+  const handleCustomTopicSelect = () => {
+    if (customTopic.trim()) {
+      setSelectedTopic(customTopic.trim());
+    }
+  };
 
   const handleContinue = () => {
     if (selectedTopic) {
@@ -53,14 +71,40 @@ const TopicSelection = () => {
             </p>
           </div>
 
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search topics..."
+              className="pl-10 bg-card"
+            />
+          </div>
+
+          {/* Custom Topic Input */}
+          <div className="mb-6">
+            <Input
+              value={customTopic}
+              onChange={(e) => {
+                setCustomTopic(e.target.value);
+                if (e.target.value.trim()) {
+                  setSelectedTopic(e.target.value.trim());
+                }
+              }}
+              placeholder="Or enter your own topic..."
+              className="bg-card"
+            />
+          </div>
+
           {/* Topics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {topics.map((topic) => {
+            {filteredTopics.map((topic) => {
               const Icon = topic.icon;
               return (
                 <button
                   key={topic.id}
-                  onClick={() => setSelectedTopic(topic.id)}
+                  onClick={() => handleTopicSelect(topic.id)}
                   className={`p-6 rounded-2xl border-2 transition-all hover:scale-105 ${
                     selectedTopic === topic.id
                       ? "border-primary bg-card shadow-lg shadow-primary/20"
@@ -83,9 +127,24 @@ const TopicSelection = () => {
               <h3 className="text-lg font-semibold text-foreground">Trending Now</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm">AI & Machine Learning</span>
-              <span className="px-4 py-2 bg-accent/10 text-accent rounded-full text-sm">World Cup 2026</span>
-              <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm">Digital Art</span>
+              <button 
+                onClick={() => handleTopicSelect("ai-ml")}
+                className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
+              >
+                AI & Machine Learning
+              </button>
+              <button 
+                onClick={() => handleTopicSelect("world-cup")}
+                className="px-4 py-2 bg-accent/10 text-accent rounded-full text-sm hover:bg-accent/20 transition-colors"
+              >
+                World Cup 2026
+              </button>
+              <button 
+                onClick={() => handleTopicSelect("digital-art")}
+                className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
+              >
+                Digital Art
+              </button>
             </div>
           </div>
 

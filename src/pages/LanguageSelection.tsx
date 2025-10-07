@@ -27,10 +27,20 @@ const LanguageSelection = () => {
   const [anyLanguage, setAnyLanguage] = useState(false);
 
   const toggleLanguage = (code: string) => {
+    if (anyLanguage) {
+      setAnyLanguage(false);
+    }
     if (selectedLanguages.includes(code)) {
       setSelectedLanguages(selectedLanguages.filter((l) => l !== code));
     } else if (selectedLanguages.length < 3) {
       setSelectedLanguages([...selectedLanguages, code]);
+    }
+  };
+
+  const handleTranslatorToggle = () => {
+    setAnyLanguage(!anyLanguage);
+    if (!anyLanguage) {
+      setSelectedLanguages([]);
     }
   };
 
@@ -65,11 +75,13 @@ const LanguageSelection = () => {
               Select Languages
             </h1>
             <p className="text-lg text-muted-foreground mb-2">
-              Choose up to 3 preferred languages
+              {chatType === "text" ? "Choose up to 3 preferred languages or use translator" : "Choose up to 3 preferred languages"}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {selectedLanguages.length}/3 selected
-            </p>
+            {!anyLanguage && (
+              <p className="text-sm text-muted-foreground">
+                {selectedLanguages.length}/3 selected
+              </p>
+            )}
           </div>
 
           {/* Languages Grid */}
@@ -78,8 +90,8 @@ const LanguageSelection = () => {
               <button
                 key={language.code}
                 onClick={() => toggleLanguage(language.code)}
-                disabled={!selectedLanguages.includes(language.code) && selectedLanguages.length >= 3}
-                className={`p-4 rounded-xl border-2 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                disabled={anyLanguage || (!selectedLanguages.includes(language.code) && selectedLanguages.length >= 3)}
+                className={`p-4 rounded-xl border-2 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed relative ${
                   selectedLanguages.includes(language.code)
                     ? "border-primary bg-card shadow-lg shadow-primary/20"
                     : "border-border bg-card/50 hover:border-primary/50"
@@ -87,11 +99,11 @@ const LanguageSelection = () => {
               >
                 <div className="text-4xl mb-2">{language.flag}</div>
                 <div className="text-sm font-semibold text-foreground">{language.name}</div>
-                {selectedLanguages.includes(language.code) && (
-                  <div className="mt-2">
+                <div className="h-6 mt-2">
+                  {selectedLanguages.includes(language.code) && (
                     <Check className="w-5 h-5 text-primary mx-auto" />
-                  </div>
-                )}
+                  )}
+                </div>
               </button>
             ))}
           </div>
@@ -103,13 +115,13 @@ const LanguageSelection = () => {
                 <input
                   type="checkbox"
                   checked={anyLanguage}
-                  onChange={(e) => setAnyLanguage(e.target.checked)}
+                  onChange={handleTranslatorToggle}
                   className="w-5 h-5 rounded border-border bg-background text-primary focus:ring-primary"
                 />
                 <div>
-                  <div className="font-semibold text-foreground">Any Language (with Translator)</div>
+                  <div className="font-semibold text-foreground">Use Translator (Any Language)</div>
                   <div className="text-sm text-muted-foreground">
-                    Enable real-time translation for cross-language conversations
+                    Enable real-time translation instead of selecting specific languages
                   </div>
                 </div>
               </label>

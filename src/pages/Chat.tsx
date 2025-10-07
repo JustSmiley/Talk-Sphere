@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, SkipForward } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 const Chat = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const chatType = searchParams.get("type") || "text";
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([
@@ -13,7 +14,10 @@ const Chat = () => {
     { id: 2, sender: "me", text: "Hi! How are you doing?", timestamp: new Date() },
   ]);
   const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
+
+  const handleNextMatch = () => {
+    navigate(`/matching?type=${chatType}`);
+  };
 
   const handleSend = () => {
     if (message.trim()) {
@@ -44,6 +48,14 @@ const Chat = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button 
+              variant="secondary" 
+              onClick={handleNextMatch}
+              className="gap-2"
+            >
+              <SkipForward className="w-4 h-4" />
+              Next Match
+            </Button>
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
               <Flag className="w-5 h-5" />
             </Button>
@@ -56,7 +68,7 @@ const Chat = () => {
         {chatType === "text" ? (
           <TextChatView messages={messages} />
         ) : (
-          <VideoChatView isMuted={isMuted} isVideoOff={isVideoOff} />
+          <VideoChatView isMuted={isMuted} />
         )}
       </div>
 
@@ -86,20 +98,12 @@ const Chat = () => {
               >
                 {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               </Button>
-              
-              <Button
-                variant={isVideoOff ? "destructive" : "secondary"}
-                size="icon"
-                className="w-14 h-14 rounded-full"
-                onClick={() => setIsVideoOff(!isVideoOff)}
-              >
-                {isVideoOff ? <VideoOff className="w-6 h-6" /> : <VideoIcon className="w-6 h-6" />}
-              </Button>
 
               <Button
                 variant="destructive"
                 size="icon"
                 className="w-14 h-14 rounded-full"
+                onClick={handleNextMatch}
               >
                 <PhoneOff className="w-6 h-6" />
               </Button>
@@ -136,7 +140,7 @@ const TextChatView = ({ messages }: { messages: any[] }) => {
   );
 };
 
-const VideoChatView = ({ isMuted, isVideoOff }: { isMuted: boolean; isVideoOff: boolean }) => {
+const VideoChatView = ({ isMuted }: { isMuted: boolean }) => {
   return (
     <div className="h-full p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Other User Video */}
@@ -159,9 +163,6 @@ const VideoChatView = ({ isMuted, isVideoOff }: { isMuted: boolean; isVideoOff: 
               <span className="text-4xl text-primary-foreground font-bold">Y</span>
             </div>
             <p className="text-muted-foreground">You</p>
-            {isVideoOff && (
-              <p className="text-sm text-muted-foreground mt-2">Camera Off</p>
-            )}
           </div>
         </div>
         {isMuted && (
