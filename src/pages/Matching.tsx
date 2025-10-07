@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, Users } from "lucide-react";
 import { useMatching } from "@/hooks/useMatching";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const Matching = () => {
   const navigate = useNavigate();
@@ -15,6 +16,15 @@ const Matching = () => {
   
   const { joinQueue, leaveQueue, listenForMatch } = useMatching();
   const [isSearching, setIsSearching] = useState(true);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const handleQuit = () => {
+    leaveQueue();
+    try {
+      cleanupRef.current?.();
+    } catch {}
+    navigate("/");
+  };
 
   useEffect(() => {
     let cleanupListener: (() => void) | undefined;
@@ -32,6 +42,7 @@ const Matching = () => {
             setIsSearching(false);
             navigate(`/chat?type=${chatType}&session=${sessionId}`);
           });
+          cleanupRef.current = cleanupListener || null;
         }
       } catch (error) {
         console.error("Matching error:", error);
@@ -94,6 +105,13 @@ const Matching = () => {
               <div className="text-xs text-muted-foreground">Countries</div>
             </div>
           </div>
+        </div>
+
+        {/* Quit Button */}
+        <div className="flex justify-center">
+          <Button variant="ghost" onClick={handleQuit}>
+            Quit and return home
+          </Button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
@@ -15,6 +15,7 @@ export const useChatSession = (
 ) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [partnerConnected, setPartnerConnected] = useState(false);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -44,7 +45,7 @@ export const useChatSession = (
 
     loadMessages();
 
-    // Listen for new messages
+    // Listen for new messages and control broadcasts
     const messagesChannel = supabase
       .channel(`session-${sessionId}`)
       .on(
@@ -68,7 +69,15 @@ export const useChatSession = (
           ]);
         }
       )
+      .on("broadcast", { event: "control" }, (payload) => {
+        const type = (payload?.payload as any)?.type;
+        if (type === "end" && onSessionEnded) {
+          onSessionEnded();
+        }
+      })
       .subscribe();
+
+    channelRef.current = messagesChannel;
 
     // Listen for session end
     const sessionChannel = supabase
@@ -95,6 +104,7 @@ export const useChatSession = (
     return () => {
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(sessionChannel);
+      channelRef.current = null;
     };
   }, [sessionId, onSessionEnded]);
 
@@ -118,6 +128,18 @@ export const useChatSession = (
     if (!sessionId) return;
 
     try {
+      // Notify partner immediately via realtime broadcast
+      try {
+        await channelRef.current?.send({
+          type: "broadcast",
+          event: "control",
+          payload: { type: "end" },
+        });
+      } catch (e) {
+        console.warn("Broadcast send failed (will rely on DB update)", e);
+      }
+
+      // Persist session end in database (fallback + consistency)
       await supabase
         .from("chat_sessions")
         .update({ ended_at: new Date().toISOString() })

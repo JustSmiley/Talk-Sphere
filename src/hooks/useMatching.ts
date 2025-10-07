@@ -30,11 +30,21 @@ export const useMatching = () => {
         for (const user of existingUsers) {
           const hasAnyLanguage = languages.includes("any");
           const userHasAny = user.languages?.includes("any");
-          const hasCommonLanguage = languages.some(lang => 
+          const hasCommonLanguage = languages.some((lang) =>
             user.languages?.includes(lang)
           );
 
-          if (hasAnyLanguage || userHasAny || hasCommonLanguage) {
+          // Treat "translator mode" as compatible with anyone
+          const isTranslatorModeCurrent = Array.isArray(languages) && languages.length === 1 && languages[0] !== "en";
+          const isTranslatorModeUser = Array.isArray(user.languages) && user.languages.length === 1 && user.languages[0] !== "en";
+
+          if (
+            hasAnyLanguage ||
+            userHasAny ||
+            hasCommonLanguage ||
+            isTranslatorModeCurrent ||
+            isTranslatorModeUser
+          ) {
             matchedUser = user;
             break;
           }
