@@ -17,8 +17,9 @@ const Chat = () => {
   const { userId } = useMatching();
   const [message, setMessage] = useState("");
   const [isMuted, setIsMuted] = useState(false);
-  const targetLanguage = searchParams.get("languages") || "en";
-  const useTranslator = searchParams.get("languages") === "any" || targetLanguage.includes(",");
+  const languages = searchParams.get("languages") || "en";
+  const useTranslator = !languages.includes(",") && languages !== "en"; // Single language that's not default = translator mode
+  const targetLanguage = useTranslator ? languages : "";
   
   const handleSessionEnded = () => {
     toast({
@@ -169,25 +170,32 @@ const TextChatView = ({
   useEffect(() => {
     if (!targetLanguage) return;
     
-    messages.forEach(async (msg) => {
-      if (msg.sender_id !== userId && !translatedMessages[msg.id]) {
-        try {
-          const { data, error } = await supabase.functions.invoke("translate-message", {
-            body: { text: msg.content, targetLanguage }
-          });
-          
-          if (!error && data) {
-            setTranslatedMessages(prev => ({
-              ...prev,
-              [msg.id]: data
-            }));
+    const translateMessages = async () => {
+      for (const msg of messages) {
+        if (msg.sender_id !== userId && !translatedMessages[msg.id]) {
+          try {
+            console.log("Translating message:", msg.content, "to", targetLanguage);
+            const { data, error } = await supabase.functions.invoke("translate-message", {
+              body: { text: msg.content, targetLanguage }
+            });
+            
+            console.log("Translation response:", data, error);
+            
+            if (!error && data) {
+              setTranslatedMessages(prev => ({
+                ...prev,
+                [msg.id]: data
+              }));
+            }
+          } catch (error) {
+            console.error("Translation error:", error);
           }
-        } catch (error) {
-          console.error("Translation error:", error);
         }
       }
-    });
-  }, [messages, userId, targetLanguage, translatedMessages]);
+    };
+    
+    translateMessages();
+  }, [messages, userId, targetLanguage]);
 
   return (
     <div className="h-full overflow-y-auto p-4">

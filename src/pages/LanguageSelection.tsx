@@ -48,7 +48,7 @@ const LanguageSelection = () => {
 
   const handleContinue = () => {
     if (selectedLanguages.length > 0 || anyLanguage) {
-      const langs = anyLanguage ? "any" : selectedLanguages.join(",");
+      const langs = anyLanguage ? selectedLanguages[0] || "en" : selectedLanguages.join(",");
       navigate(`/verification?type=${chatType}&topic=${topic}&languages=${langs}`);
     }
   };
@@ -77,7 +77,7 @@ const LanguageSelection = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {anyLanguage ? "Select Translation Language" : "Select Languages"}
             </h1>
-            <p className="text-lg text-muted-foreground mb-2">
+            <p className="text-lg text-muted-foreground mb-2 min-h-[28px]">
               {anyLanguage 
                 ? "Choose 1 language to translate conversations into"
                 : chatType === "text" 
@@ -85,16 +85,12 @@ const LanguageSelection = () => {
                   : "Choose up to 3 preferred languages"
               }
             </p>
-            {!anyLanguage && (
-              <p className="text-sm text-muted-foreground">
-                {selectedLanguages.length}/3 selected
-              </p>
-            )}
-            {anyLanguage && selectedLanguages.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                {selectedLanguages.length}/1 selected
-              </p>
-            )}
+            <p className="text-sm text-muted-foreground min-h-[20px]">
+              {anyLanguage 
+                ? selectedLanguages.length > 0 ? `${selectedLanguages.length}/1 selected` : ""
+                : `${selectedLanguages.length}/3 selected`
+              }
+            </p>
           </div>
 
           {/* Languages Grid */}
