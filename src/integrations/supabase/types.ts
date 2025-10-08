@@ -22,7 +22,9 @@ export type Database = {
           id: string
           topic: string
           user1_id: string
+          user1_languages: string | null
           user2_id: string
+          user2_languages: string | null
         }
         Insert: {
           chat_type: string
@@ -31,7 +33,9 @@ export type Database = {
           id?: string
           topic: string
           user1_id: string
+          user1_languages?: string | null
           user2_id: string
+          user2_languages?: string | null
         }
         Update: {
           chat_type?: string
@@ -40,7 +44,9 @@ export type Database = {
           id?: string
           topic?: string
           user1_id?: string
+          user1_languages?: string | null
           user2_id?: string
+          user2_languages?: string | null
         }
         Relationships: []
       }

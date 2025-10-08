@@ -13,12 +13,44 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { userId } = useAuth();
-  const chatType = searchParams.get("type") || "text";
   const sessionId = searchParams.get("session");
   const [message, setMessage] = useState("");
   const [isMuted, setIsMuted] = useState(false);
-  const languages = searchParams.get("languages") || "en";
-  const topic = searchParams.get("topic") || "General";
+  const [sessionData, setSessionData] = useState<{
+    chatType: string;
+    topic: string;
+    languages: string;
+  } | null>(null);
+
+  // Fetch session data from database
+  useEffect(() => {
+    const fetchSessionData = async () => {
+      if (!sessionId || !userId) return;
+      
+      const { data, error } = await supabase
+        .from("chat_sessions")
+        .select("topic, chat_type, user1_id, user1_languages, user2_languages")
+        .eq("id", sessionId)
+        .single();
+
+      if (data && !error) {
+        const isUser1 = data.user1_id === userId;
+        const userLanguages = isUser1 ? data.user1_languages : data.user2_languages;
+        
+        setSessionData({
+          chatType: data.chat_type,
+          topic: data.topic,
+          languages: userLanguages || "en",
+        });
+      }
+    };
+
+    fetchSessionData();
+  }, [sessionId, userId]);
+
+  const chatType = sessionData?.chatType || searchParams.get("type") || "text";
+  const topic = sessionData?.topic || searchParams.get("topic") || "General";
+  const languages = sessionData?.languages || searchParams.get("languages") || "en";
   const useTranslator = languages.startsWith("translator:");
   const targetLanguage = useTranslator ? languages.replace("translator:", "") : "";
   
