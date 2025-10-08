@@ -18,8 +18,9 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [isMuted, setIsMuted] = useState(false);
   const languages = searchParams.get("languages") || "en";
-  const useTranslator = !languages.includes(",") && languages !== "en"; // Single language that's not default = translator mode
-  const targetLanguage = useTranslator ? languages : "";
+  const topic = searchParams.get("topic") || "General";
+  const useTranslator = languages.startsWith("translator:");
+  const targetLanguage = useTranslator ? languages.replace("translator:", "") : "";
   
   const handleSessionEnded = () => {
     toast({
@@ -27,8 +28,6 @@ const Chat = () => {
       description: "Your chat partner has left the conversation",
     });
     setTimeout(() => {
-      const topic = searchParams.get("topic") || "General";
-      const languages = searchParams.get("languages") || "en";
       navigate(`/matching?type=${chatType}&topic=${topic}&languages=${languages}`);
     }, 2000);
   };
@@ -40,8 +39,6 @@ const Chat = () => {
 
   const handleNextMatch = async () => {
     await endSession();
-    const topic = searchParams.get("topic") || "General";
-    const languages = searchParams.get("languages") || "en";
     navigate(`/matching?type=${chatType}&topic=${topic}&languages=${languages}`);
   };
 
@@ -105,7 +102,7 @@ const Chat = () => {
           <TextChatView 
             messages={messages} 
             userId={userId} 
-            targetLanguage={useTranslator ? targetLanguage.split(",")[0] : ""} 
+            targetLanguage={targetLanguage} 
           />
         ) : (
           <VideoChatView isMuted={isMuted} />

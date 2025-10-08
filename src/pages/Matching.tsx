@@ -14,7 +14,10 @@ const Matching = () => {
   const chatType = searchParams.get("type") || "text";
   const topic = searchParams.get("topic") || "General";
   const languagesParam = searchParams.get("languages") || "en";
-  const languages = languagesParam.split(",");
+  // Handle translator mode format: "translator:en" or regular "en,es,fr"
+  const languages = languagesParam.startsWith("translator:") 
+    ? [languagesParam.replace("translator:", "")] 
+    : languagesParam.split(",");
   
   const { joinQueue, leaveQueue, listenForMatch } = useMatching();
   const [isSearching, setIsSearching] = useState(true);
@@ -36,19 +39,17 @@ const Matching = () => {
 
     const startMatching = async () => {
       try {
-        const result = await joinQueue(topic, languages, chatType);
-        
-        if (result.matched) {
-          // Immediate match found
-          navigate(`/chat?type=${chatType}&session=${result.sessionId}`);
-        } else {
-          // Waiting for match
-          cleanupListener = listenForMatch((sessionId) => {
-            setIsSearching(false);
-            navigate(`/chat?type=${chatType}&session=${sessionId}`);
-          });
-          cleanupRef.current = cleanupListener || null;
-        }
+      const result = await joinQueue(topic, languagesParam, chatType);
+      
+      if (result.matched) {
+        navigate(`/chat?type=${chatType}&session=${result.sessionId}&topic=${topic}&languages=${languagesParam}`);
+      } else {
+        // Set up realtime listener for match
+        const cleanup = listenForMatch((sessionId) => {
+          navigate(`/chat?type=${chatType}&session=${sessionId}&topic=${topic}&languages=${languagesParam}`);
+        });
+        cleanupRef.current = cleanup;
+      }
       } catch (error) {
         console.error("Matching error:", error);
         toast({

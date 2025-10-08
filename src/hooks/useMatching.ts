@@ -4,14 +4,21 @@ import { useAuth } from "@/contexts/AuthContext";
 export const useMatching = () => {
   const { userId } = useAuth();
 
-  const joinQueue = async (topic: string, languages: string[], chatType: string) => {
+  const joinQueue = async (topic: string, languages: string | string[], chatType: string) => {
     if (!userId) throw new Error("User not authenticated");
     
     try {
+      // Convert languages to array format for database
+      const languagesArray = Array.isArray(languages) 
+        ? languages 
+        : languages.includes(',') 
+          ? languages.split(',') 
+          : [languages];
+
       // Use secure server-side matching function
       const { data, error } = await supabase.rpc('find_match', {
         _topic: topic,
-        _languages: languages,
+        _languages: languagesArray,
         _chat_type: chatType,
       });
 

@@ -48,7 +48,7 @@ const LanguageSelection = () => {
 
   const handleContinue = () => {
     if (selectedLanguages.length > 0 || anyLanguage) {
-      const langs = anyLanguage ? selectedLanguages[0] || "en" : selectedLanguages.join(",");
+      const langs = anyLanguage ? `translator:${selectedLanguages[0] || "en"}` : selectedLanguages.join(",");
       navigate(`/verification?type=${chatType}&topic=${topic}&languages=${langs}`);
     }
   };
@@ -121,8 +121,8 @@ const LanguageSelection = () => {
             ))}
           </div>
 
-          {/* Text Chat Option */}
-          {chatType === "text" && (
+          {/* Text and CAPTCHA Chat Option */}
+          {(chatType === "text" || chatType === "captcha") && (
             <div className="bg-card/30 backdrop-blur-sm border border-border rounded-2xl p-6 mb-8">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -134,7 +134,7 @@ const LanguageSelection = () => {
                 <div>
                   <div className="font-semibold text-foreground">Use Translator (Any Language)</div>
                   <div className="text-sm text-muted-foreground">
-                    Enable real-time translation instead of selecting specific languages
+                    Enable real-time translation to match with anyone regardless of their language
                   </div>
                 </div>
               </label>
