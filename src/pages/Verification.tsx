@@ -55,8 +55,6 @@ const Verification = () => {
             <p className="text-lg text-muted-foreground">
               {chatType === "video" || chatType === "voice"
                 ? "Quick face detection to ensure you're human"
-                : chatType === "captcha"
-                ? "Complete CAPTCHA verification to continue"
                 : "Complete a simple verification to continue"}
             </p>
           </div>
@@ -83,19 +81,6 @@ const Verification = () => {
                         <li>• This verification takes just a few seconds</li>
                         <li>• No data is stored or recorded</li>
                       </ul>
-                    </div>
-                  </div>
-                ) : chatType === "captcha" ? (
-                  <div className="space-y-6">
-                    {/* CAPTCHA Specific UI */}
-                    <div className="aspect-[2/1] bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-border">
-                      <p className="text-muted-foreground">CAPTCHA challenge will appear here</p>
-                    </div>
-
-                    <div className="bg-primary/10 rounded-xl p-4">
-                      <p className="text-sm text-muted-foreground">
-                        Solve the CAPTCHA to verify you're human. This ensures safe conversations for all users.
-                      </p>
                     </div>
                   </div>
                 ) : (

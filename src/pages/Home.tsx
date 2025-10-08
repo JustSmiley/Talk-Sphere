@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Video, Globe, Zap, Shield } from "lucide-react";
+import { MessageSquare, Video, Globe, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
@@ -50,16 +50,6 @@ const Home = () => {
             >
               <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
               Start Text Chat
-            </Button>
-
-            <Button
-              variant="hero"
-              size="xl"
-              onClick={() => navigate("/topic-selection?type=captcha")}
-              className="group"
-            >
-              <Shield className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              Start CAPTCHA Chat
             </Button>
           </div>
 

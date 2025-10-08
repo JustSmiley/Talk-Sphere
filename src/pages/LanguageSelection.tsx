@@ -121,8 +121,8 @@ const LanguageSelection = () => {
             ))}
           </div>
 
-          {/* Text and CAPTCHA Chat Option */}
-          {(chatType === "text" || chatType === "captcha") && (
+          {/* Text Chat Option */}
+          {chatType === "text" && (
             <div className="bg-card/30 backdrop-blur-sm border border-border rounded-2xl p-6 mb-8">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
