@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, SkipForward, Home } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,11 @@ const Chat = () => {
     topic: string;
     languages: string;
   } | null>(null);
+
+  // Preserve original preferences for reliable navigation
+  const chatTypeRef = useRef<string | null>(searchParams.get("type"));
+  const topicRef = useRef<string | null>(searchParams.get("topic"));
+  const languagesRef = useRef<string | null>(searchParams.get("languages"));
 
   // Fetch session data from database
   useEffect(() => {
@@ -42,6 +47,11 @@ const Chat = () => {
           topic: data.topic,
           languages: userLanguages || "en",
         });
+        
+        // Update last known prefs for stable redirects
+        chatTypeRef.current = data.chat_type || chatTypeRef.current;
+        topicRef.current = data.topic || topicRef.current;
+        languagesRef.current = (userLanguages || languagesRef.current) as string | null;
       }
     };
 
@@ -60,7 +70,10 @@ const Chat = () => {
       description: "Your chat partner has left the conversation",
     });
     setTimeout(() => {
-      navigate(`/matching?type=${chatType}&topic=${topic}&languages=${languages}`);
+      const t = topicRef.current || topic;
+      const ct = chatTypeRef.current || chatType;
+      const langs = languagesRef.current || languages;
+      navigate(`/matching?type=${ct}&topic=${t}&languages=${langs}`);
     }, 2000);
   };
   
@@ -71,7 +84,10 @@ const Chat = () => {
 
   const handleNextMatch = async () => {
     await endSession();
-    navigate(`/matching?type=${chatType}&topic=${topic}&languages=${languages}`);
+    const t = topicRef.current || topic;
+    const ct = chatTypeRef.current || chatType;
+    const langs = languagesRef.current || languages;
+    navigate(`/matching?type=${ct}&topic=${t}&languages=${langs}`);
   };
 
   const handleQuitChat = async () => {
@@ -109,6 +125,7 @@ const Chat = () => {
               variant="secondary" 
               onClick={handleNextMatch}
               className="gap-2"
+              disabled={!topicRef.current || !chatTypeRef.current || !languagesRef.current}
             >
               <SkipForward className="w-4 h-4" />
               Next Match
