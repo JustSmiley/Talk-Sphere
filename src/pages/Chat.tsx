@@ -21,11 +21,12 @@ const Chat = () => {
     topic: string;
     languages: string;
   } | null>(null);
+  const [isLeavingSession, setIsLeavingSession] = useState(false);
 
   // Preserve original preferences for reliable navigation
-  const chatTypeRef = useRef<string | null>(searchParams.get("type"));
-  const topicRef = useRef<string | null>(searchParams.get("topic"));
-  const languagesRef = useRef<string | null>(searchParams.get("languages"));
+  const chatTypeRef = useRef<string | null>(null);
+  const topicRef = useRef<string | null>(null);
+  const languagesRef = useRef<string | null>(null);
 
   // Fetch session data from database
   useEffect(() => {
@@ -48,10 +49,10 @@ const Chat = () => {
           languages: userLanguages || "en",
         });
         
-        // Update last known prefs for stable redirects
-        chatTypeRef.current = data.chat_type || chatTypeRef.current;
-        topicRef.current = data.topic || topicRef.current;
-        languagesRef.current = (userLanguages || languagesRef.current) as string | null;
+        // CRITICAL: Store these for navigation
+        chatTypeRef.current = data.chat_type;
+        topicRef.current = data.topic;
+        languagesRef.current = userLanguages || "en";
       }
     };
 
@@ -65,16 +66,19 @@ const Chat = () => {
   const targetLanguage = useTranslator ? languages.replace("translator:", "") : "";
   
   const handleSessionEnded = () => {
-    toast({
-      title: "Partner left",
-      description: "Your chat partner has left the conversation",
-    });
+    // Only show toast if partner left (not if we're leaving)
+    if (!isLeavingSession) {
+      toast({
+        title: "Partner left",
+        description: "Your chat partner has left the conversation",
+      });
+    }
     setTimeout(() => {
-      const t = topicRef.current || topic;
-      const ct = chatTypeRef.current || chatType;
-      const langs = languagesRef.current || languages;
+      const ct = chatTypeRef.current || "text";
+      const t = topicRef.current || "General";
+      const langs = languagesRef.current || "en";
       navigate(`/matching?type=${ct}&topic=${t}&languages=${langs}`);
-    }, 2000);
+    }, isLeavingSession ? 0 : 2000);
   };
   
   const { messages, sendMessage, endSession, partnerConnected } = useChatSession(
@@ -83,14 +87,16 @@ const Chat = () => {
   );
 
   const handleNextMatch = async () => {
+    setIsLeavingSession(true);
     await endSession();
-    const t = topicRef.current || topic;
-    const ct = chatTypeRef.current || chatType;
-    const langs = languagesRef.current || languages;
+    const ct = chatTypeRef.current || "text";
+    const t = topicRef.current || "General";
+    const langs = languagesRef.current || "en";
     navigate(`/matching?type=${ct}&topic=${t}&languages=${langs}`);
   };
 
   const handleQuitChat = async () => {
+    setIsLeavingSession(true);
     await endSession();
     navigate("/");
   };
@@ -125,7 +131,6 @@ const Chat = () => {
               variant="secondary" 
               onClick={handleNextMatch}
               className="gap-2"
-              disabled={!topicRef.current || !chatTypeRef.current || !languagesRef.current}
             >
               <SkipForward className="w-4 h-4" />
               Next Match
