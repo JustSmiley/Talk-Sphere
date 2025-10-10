@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, SkipForward, Home } from "lucide-react";
+import { Send, PhoneOff, Flag, Mic, MicOff, Video as VideoIcon, SkipForward, Home, SwitchCamera } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useChatSession } from "@/hooks/useChatSession";
@@ -290,6 +290,87 @@ const TextChatView = ({
 };
 
 const VideoChatView = ({ isMuted }: { isMuted: boolean }) => {
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [currentDeviceId, setCurrentDeviceId] = useState<string>("");
+  const { toast } = useToast();
+
+  const startCamera = async (deviceId?: string) => {
+    try {
+      // Stop existing stream if any
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "user" },
+        audio: !isMuted
+      };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(mediaStream);
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = mediaStream;
+      }
+
+      // Get available devices
+      const allDevices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = allDevices.filter(device => device.kind === 'videoinput');
+      setDevices(videoDevices);
+
+      // Set current device
+      const videoTrack = mediaStream.getVideoTracks()[0];
+      if (videoTrack) {
+        setCurrentDeviceId(videoTrack.getSettings().deviceId || "");
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast({
+        title: "Camera Error",
+        description: "Failed to access camera. Please check permissions.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const switchCamera = async () => {
+    if (devices.length <= 1) {
+      toast({
+        title: "No Other Cameras",
+        description: "Only one camera is available",
+      });
+      return;
+    }
+
+    const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
+    const nextIndex = (currentIndex + 1) % devices.length;
+    const nextDevice = devices[nextIndex];
+    
+    await startCamera(nextDevice.deviceId);
+  };
+
+  useEffect(() => {
+    startCamera();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Update audio track when muted changes
+  useEffect(() => {
+    if (stream) {
+      const audioTracks = stream.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = !isMuted;
+      });
+    }
+  }, [isMuted, stream]);
+
   return (
     <div className="h-full p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Other User Video */}
@@ -299,25 +380,34 @@ const VideoChatView = ({ isMuted }: { isMuted: boolean }) => {
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl text-primary-foreground font-bold">A</span>
             </div>
-            <p className="text-muted-foreground">Anonymous User</p>
+            <p className="text-muted-foreground">Waiting for partner...</p>
           </div>
         </div>
       </div>
 
       {/* Your Video */}
       <div className="relative bg-muted rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl text-primary-foreground font-bold">Y</span>
-            </div>
-            <p className="text-muted-foreground">You</p>
-          </div>
-        </div>
+        <video
+          ref={localVideoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
+        />
         {isMuted && (
           <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-medium">
             Muted
           </div>
+        )}
+        {devices.length > 1 && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute bottom-4 right-4 rounded-full"
+            onClick={switchCamera}
+          >
+            <SwitchCamera className="w-5 h-5" />
+          </Button>
         )}
       </div>
     </div>
