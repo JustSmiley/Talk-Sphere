@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sparkles, Trophy, Heart, Palette, Code, Music, Globe, Search } from "lucide-react";
+import { ArrowLeft, Sparkles, Trophy, Heart, Palette, Code, Music, Globe, Search, MessageCircle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const topics = [
+  { id: "general", name: "General", icon: MessageCircle, color: "from-slate-500 to-gray-500", description: "Just talk to people!" },
   { id: "tech", name: "Technology", icon: Code, color: "from-blue-500 to-cyan-500" },
   { id: "sports", name: "Sports", icon: Trophy, color: "from-green-500 to-emerald-500" },
   { id: "health", name: "Mental Health", icon: Heart, color: "from-pink-500 to-rose-500" },
@@ -20,6 +22,46 @@ const TopicSelection = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [customTopic, setCustomTopic] = useState("");
+  const [trendingTopics, setTrendingTopics] = useState<Array<{ topic: string; count: number }>>([]);
+
+  useEffect(() => {
+    const fetchTrendingTopics = async () => {
+      try {
+        // Get topics from recent match queue entries (last 24 hours)
+        const { data: queueData, error: queueError } = await supabase
+          .from("match_queue")
+          .select("topic")
+          .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+        // Get topics from recent chat sessions (last 24 hours)
+        const { data: sessionData, error: sessionError } = await supabase
+          .from("chat_sessions")
+          .select("topic")
+          .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+        if (!queueError && !sessionError) {
+          // Combine and count topics
+          const allTopics = [...(queueData || []), ...(sessionData || [])];
+          const topicCounts = allTopics.reduce((acc, { topic }) => {
+            acc[topic] = (acc[topic] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+          // Sort by count and get top 3
+          const sorted = Object.entries(topicCounts)
+            .map(([topic, count]) => ({ topic, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 3);
+
+          setTrendingTopics(sorted);
+        }
+      } catch (error) {
+        console.error("Error fetching trending topics:", error);
+      }
+    };
+
+    fetchTrendingTopics();
+  }, []);
 
   const filteredTopics = topics.filter(topic => 
     topic.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -115,6 +157,9 @@ const TopicSelection = () => {
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground">{topic.name}</h3>
+                  {topic.description && (
+                    <p className="text-sm text-muted-foreground mt-2">{topic.description}</p>
+                  )}
                 </button>
               );
             })}
@@ -126,26 +171,25 @@ const TopicSelection = () => {
               <Sparkles className="w-5 h-5 text-accent" />
               <h3 className="text-lg font-semibold text-foreground">Trending Now</h3>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button 
-                onClick={() => handleTopicSelect("ai-ml")}
-                className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
-              >
-                AI & Machine Learning
-              </button>
-              <button 
-                onClick={() => handleTopicSelect("world-cup")}
-                className="px-4 py-2 bg-accent/10 text-accent rounded-full text-sm hover:bg-accent/20 transition-colors"
-              >
-                World Cup 2026
-              </button>
-              <button 
-                onClick={() => handleTopicSelect("digital-art")}
-                className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
-              >
-                Digital Art
-              </button>
-            </div>
+            {trendingTopics.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {trendingTopics.map(({ topic }, index) => (
+                  <button 
+                    key={topic}
+                    onClick={() => handleTopicSelect(topic)}
+                    className={`px-4 py-2 rounded-full text-sm transition-colors capitalize ${
+                      index % 2 === 0 
+                        ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                        : "bg-accent/10 text-accent hover:bg-accent/20"
+                    }`}
+                  >
+                    {topic}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No trending topics yet. Be the first!</p>
+            )}
           </div>
 
           {/* Continue Button */}
