@@ -1,23 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sparkles, Scale, TrendingUp, Bot, CloudRain, Award, Users, UtensilsCrossed, Tv, Music, Laugh, Share2, MessageCircle, Search } from "lucide-react";
+import { ArrowLeft, Sparkles, Trophy, Heart, Palette, Code, Music, Globe, Search, MessageCircle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const topics = [
   { id: "general", name: "General", icon: MessageCircle, color: "from-slate-500 to-gray-500", description: "Just talk to people!" },
-  { id: "gaza-ceasefire", name: "Gaza Ceasefire/Hostage Deal", icon: Scale, color: "from-red-500 to-orange-500" },
-  { id: "us-china-trade", name: "U.S.-China Trade/Tariffs", icon: TrendingUp, color: "from-blue-600 to-cyan-600" },
-  { id: "ai-governance", name: "AI Governance/Regulation", icon: Bot, color: "from-violet-500 to-fuchsia-500" },
-  { id: "climate-change", name: "Climate Change", icon: CloudRain, color: "from-green-600 to-teal-600" },
-  { id: "nobel-prize", name: "Nobel Prize Winners", icon: Award, color: "from-yellow-500 to-amber-500" },
-  { id: "us-immigration", name: "U.S. Immigration", icon: Users, color: "from-blue-500 to-sky-500" },
-  { id: "global-dishes", name: "Favorite Foods: Global Dishes", icon: UtensilsCrossed, color: "from-orange-500 to-red-500" },
-  { id: "tv-movies", name: "Must-Watch TV Shows & Movies", icon: Tv, color: "from-pink-500 to-rose-500" },
-  { id: "music-taste", name: "Music Taste", icon: Music, color: "from-purple-500 to-pink-500" },
-  { id: "unusual-hobbies", name: "Unusual Hobbies to Try", icon: Laugh, color: "from-cyan-500 to-blue-500" },
-  { id: "social-media-trends", name: "Social Media Trends 2026", icon: Share2, color: "from-emerald-500 to-green-500" },
+  { id: "tech", name: "Technology", icon: Code, color: "from-blue-500 to-cyan-500" },
+  { id: "sports", name: "Sports", icon: Trophy, color: "from-green-500 to-emerald-500" },
+  { id: "health", name: "Mental Health", icon: Heart, color: "from-pink-500 to-rose-500" },
+  { id: "art", name: "Art & Design", icon: Palette, color: "from-purple-500 to-violet-500" },
+  { id: "music", name: "Music", icon: Music, color: "from-orange-500 to-amber-500" },
+  { id: "culture", name: "Culture", icon: Globe, color: "from-indigo-500 to-blue-500" },
 ];
 
 const TopicSelection = () => {
